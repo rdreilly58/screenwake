@@ -22,7 +22,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         guard let button = statusItem?.button else { return }
-        button.image = NSImage(systemSymbolName: "moon.fill", accessibilityDescription: "Start Screensaver")
+        button.image = NSImage(systemSymbolName: "moon.fill", accessibilityDescription: "Lock Screen")
         button.image?.isTemplate = true
         button.action = #selector(handleClick)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -36,18 +36,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if event?.type == .rightMouseUp {
             showContextMenu()
         } else {
-            activateAndLock()
+            lockScreen()
         }
     }
 
-    // MARK: - Screensaver + Lock
+    // MARK: - Lock
 
-    private func activateAndLock() {
-        // Start screensaver for the visual
-        shell("/usr/bin/open", args: ["-a", "ScreenSaverEngine"])
-
-        // Lock screen via SACLockScreenImmediate (login.framework)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+    private func lockScreen() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             lockScreenNow()
         }
     }
@@ -56,9 +52,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showContextMenu() {
         let menu = NSMenu()
-        let startItem = NSMenuItem(title: "Lock Screen", action: #selector(lockFromMenu), keyEquivalent: "")
-        startItem.target = self
-        menu.addItem(startItem)
+        let lockItem = NSMenuItem(title: "Lock Screen", action: #selector(lockFromMenu), keyEquivalent: "")
+        lockItem.target = self
+        menu.addItem(lockItem)
         menu.addItem(.separator())
         let quitItem = NSMenuItem(title: "Quit ScreenWake", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
@@ -66,23 +62,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.popUpMenu(menu)
     }
 
-    @objc private func lockFromMenu() { activateAndLock() }
+    @objc private func lockFromMenu() { lockScreen() }
     @objc private func quit() { NSApp.terminate(nil) }
-
-    // MARK: - Shell helper
-
-    private func shell(_ path: String, args: [String]) {
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: path)
-        proc.arguments = args
-        try? proc.run()
-    }
 }
 
-// MARK: - Lock via login.framework (SACLockScreenImmediate)
+// MARK: - Lock via SACLockScreenImmediate (login.framework)
 
 private func lockScreenNow() {
-    let handle = dlopen("/System/Library/PrivateFrameworks/login.framework/login", RTLD_LAZY)
+    let handle = dlopen(
+        "/System/Library/PrivateFrameworks/login.framework/Versions/A/login",
+        RTLD_LAZY
+    )
     defer { dlclose(handle) }
     guard let sym = dlsym(handle, "SACLockScreenImmediate") else { return }
     let fn = unsafeBitCast(sym, to: (@convention(c) () -> Void).self)

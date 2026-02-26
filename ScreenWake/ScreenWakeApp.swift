@@ -46,13 +46,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Start screensaver for the visual
         run("/usr/bin/open", args: ["-a", "ScreenSaverEngine"])
 
-        // Lock session after brief delay — ensures password required on wake
-        // regardless of system screensaver password setting
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-            self?.run(
-                "/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession",
-                args: ["-suspend"]
-            )
+        // Sleep the display after brief delay — combined with askForPassword=1
+        // this forces password on wake, reliably locking the screen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.run("/usr/bin/pmset", args: ["displaysleepnow"])
         }
     }
 

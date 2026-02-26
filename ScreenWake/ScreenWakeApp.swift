@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         guard let button = statusItem?.button else { return }
         button.image = NSImage(systemSymbolName: "moon.fill", accessibilityDescription: "Start Screensaver")
-        button.image?.isTemplate = true          // adapts to light/dark menu bar
+        button.image?.isTemplate = true
         button.action = #selector(handleClick)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.target = self
@@ -36,35 +36,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if event?.type == .rightMouseUp {
             showContextMenu()
         } else {
-            activateScreenSaver()
+            activateAndLock()
         }
     }
 
     // MARK: - Screensaver + Lock
 
-    private func activateScreenSaver() {
+    private func activateAndLock() {
         // Start screensaver for the visual
-        run("/usr/bin/open", args: ["-a", "ScreenSaverEngine"])
+        shell("/usr/bin/open", args: ["-a", "ScreenSaverEngine"])
 
-        // Sleep display after brief delay — with askForPassword set on currentHost,
-        // this reliably requires password on wake
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.run("/usr/bin/pmset", args: ["displaysleepnow"])
+        // Lock screen via SACLockScreenImmediate (login.framework)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            lockScreenNow()
         }
-    }
-
-    private func run(_ path: String, args: [String]) {
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: path)
-        proc.arguments = args
-        try? proc.run()
     }
 
     // MARK: - Right-click menu
 
     private func showContextMenu() {
         let menu = NSMenu()
-        let startItem = NSMenuItem(title: "Start Screensaver", action: #selector(activateScreenSaverMenu), keyEquivalent: "")
+        let startItem = NSMenuItem(title: "Lock Screen", action: #selector(lockFromMenu), keyEquivalent: "")
         startItem.target = self
         menu.addItem(startItem)
         menu.addItem(.separator())
@@ -74,6 +66,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.popUpMenu(menu)
     }
 
-    @objc private func activateScreenSaverMenu() { activateScreenSaver() }
+    @objc private func lockFromMenu() { activateAndLock() }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    // MARK: - Shell helper
+
+    private func shell(_ path: String, args: [String]) {
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: path)
+        proc.arguments = args
+        try? proc.run()
+    }
+}
+
+// MARK: - Lock via login.framework (SACLockScreenImmediate)
+
+private func lockScreenNow() {
+    let handle = dlopen("/System/Library/PrivateFrameworks/login.framework/login", RTLD_LAZY)
+    defer { dlclose(handle) }
+    guard let sym = dlsym(handle, "SACLockScreenImmediate") else { return }
+    let fn = unsafeBitCast(sym, to: (@convention(c) () -> Void).self)
+    fn()
 }

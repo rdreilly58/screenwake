@@ -43,9 +43,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lock
 
     private func lockScreen() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // Start screensaver first for the visual transition
+        shell("/usr/bin/open", args: ["-a", "ScreenSaverEngine"])
+        // Then lock after a short delay so the screensaver is visible
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             lockScreenNow()
         }
+    }
+
+    // MARK: - Shell helper
+
+    private func shell(_ path: String, args: [String]) {
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: path)
+        proc.arguments = args
+        try? proc.run()
     }
 
     // MARK: - Right-click menu

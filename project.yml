@@ -1,0 +1,42 @@
+name: ScreenWake
+options:
+  bundleIdPrefix: com.rreilly
+  deploymentTarget:
+    macOS: "14.0"
+  defaultConfig: Debug
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    PRODUCT_BUNDLE_IDENTIFIER: com.rreilly.screenwake
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  ScreenWake:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: ScreenWake
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rreilly.screenwake
+        PRODUCT_NAME: ScreenWake
+        INFOPLIST_FILE: ScreenWake/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+    entitlements:
+      path: ScreenWake/ScreenWake.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+    info:
+      path: ScreenWake/Info.plist
+      properties:
+        CFBundleName: ScreenWake
+        CFBundleDisplayName: ScreenWake
+        LSUIElement: true
+        NSPrincipalClass: NSApplication

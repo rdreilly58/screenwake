@@ -40,12 +40,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Screensaver
+    // MARK: - Screensaver + Lock
 
     private func activateScreenSaver() {
+        // Start screensaver for the visual
+        run("/usr/bin/open", args: ["-a", "ScreenSaverEngine"])
+
+        // Lock session after brief delay — ensures password required on wake
+        // regardless of system screensaver password setting
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            self?.run(
+                "/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession",
+                args: ["-suspend"]
+            )
+        }
+    }
+
+    private func run(_ path: String, args: [String]) {
         let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        proc.arguments = ["-a", "ScreenSaverEngine"]
+        proc.executableURL = URL(fileURLWithPath: path)
+        proc.arguments = args
         try? proc.run()
     }
 
